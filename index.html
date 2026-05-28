@@ -99,6 +99,17 @@ input[type=date]:focus, input[type=week]:focus { outline: none; border-color: va
 .compare-row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .compare-row span { color: var(--text-dim); font-size: 0.82rem; }
 
+/* REPORT TABS */
+#screen-reports { flex-direction: column; overflow: hidden; }
+.report-top { padding: 10px 14px; background: var(--surface); border-bottom: 1px solid var(--surface2); display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
+.report-top h2 { font-size: 1rem; margin-right: 4px; }
+.report-tabs { display: flex; gap: 0; border-bottom: 2px solid var(--surface2); flex-shrink: 0; background: var(--surface); }
+.report-tab { padding: 10px 22px; border: none; background: none; color: var(--text-dim); font-size: 0.85rem; font-weight: 600; cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -2px; transition: all 0.15s; }
+.report-tab:hover { color: var(--text); }
+.report-tab.active { color: var(--secondary); border-bottom-color: var(--primary); }
+.report-tab-content { display: none; flex: 1; overflow-y: auto; padding: 14px; flex-direction: column; gap: 12px; }
+.report-tab-content.active { display: flex; }
+
 /* ===== SETTINGS ===== */
 #screen-settings { flex-direction: column; padding: 14px; gap: 12px; overflow-y: auto; }
 #screen-settings h2 { font-size: 1.05rem; }
@@ -182,47 +193,77 @@ input[type=date]:focus, input[type=week]:focus { outline: none; border-color: va
 
 <!-- REPORTS -->
 <div id="screen-reports" class="screen">
-  <div class="report-controls">
+
+  <!-- Period selector (siempre visible) -->
+  <div class="report-top">
     <h2>📊 Reportes</h2>
-    <button class="period-btn active" onclick="setPeriod('day')" id="pb-day">Día</button>
+    <button class="period-btn active" onclick="setPeriod('day')" id="pb-day">Hoy</button>
     <button class="period-btn" onclick="setPeriod('week')" id="pb-week">Semana</button>
     <button class="period-btn" onclick="setPeriod('month')" id="pb-month">Mes</button>
     <input type="date" id="date-from" onchange="loadReports()">
-    <span style="color:var(--text-dim);font-size:0.82rem" id="date-to-wrap"> → <input type="date" id="date-to" onchange="loadReports()"></span>
+    <span id="date-to-wrap" style="display:none;color:var(--text-dim);font-size:0.82rem"> → <input type="date" id="date-to" onchange="loadReports()"></span>
   </div>
 
-  <div class="kpi-row" id="kpi-row">
-    <div class="kpi"><div class="kpi-label">Cargando...</div><div class="kpi-value">—</div></div>
+  <!-- Tabs -->
+  <div class="report-tabs">
+    <button class="report-tab active" onclick="switchTab('resumen')">📈 Resumen</button>
+    <button class="report-tab" onclick="switchTab('productos')">🏆 Productos</button>
+    <button class="report-tab" onclick="switchTab('transacciones')">📋 Transacciones</button>
+    <button class="report-tab" onclick="switchTab('comparar')">⚖️ Comparar</button>
   </div>
 
-  <!-- Compare -->
-  <div class="report-card" style="padding:12px">
-    <div class="compare-row">
-      <span>Comparar con:</span>
-      <input type="date" id="cmp-from" onchange="loadCompare()">
-      <span>→</span>
-      <input type="date" id="cmp-to" onchange="loadCompare()">
-      <button class="period-btn" onclick="setCmpPrev()" style="font-size:0.75rem">Período anterior</button>
+  <!-- Tab: Resumen -->
+  <div class="report-tab-content active" id="tab-resumen">
+    <div class="kpi-row" id="kpi-row">
+      <div class="kpi"><div class="kpi-label">Cargando...</div><div class="kpi-value">—</div></div>
     </div>
-    <div id="compare-result" style="margin-top:10px;font-size:0.85rem;color:var(--text-dim)">Selecciona fechas para comparar</div>
-  </div>
-
-  <div class="report-grid">
-    <div class="report-card">
-      <h3>🏆 Productos más vendidos</h3>
-      <table class="report-table"><thead><tr><th>Producto</th><th>Uds.</th><th>Total</th></tr></thead><tbody id="top-products-body"></tbody></table>
-    </div>
-    <div class="report-card">
-      <h3>🕐 Ventas por hora</h3>
-      <table class="report-table"><thead><tr><th>Hora</th><th>Ventas</th><th>Total</th></tr></thead><tbody id="hourly-body"></tbody></table>
-    </div>
-    <div class="report-card" style="grid-column: 1 / -1;">
-      <h3>📋 Últimas transacciones</h3>
-      <div style="max-height:240px;overflow-y:auto">
-        <table class="report-table"><thead><tr><th>Fecha/Hora</th><th>Productos</th><th>Total</th></tr></thead><tbody id="tx-body"></tbody></table>
+    <div class="report-grid" style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="report-card">
+        <h3>🏆 Top productos</h3>
+        <table class="report-table"><thead><tr><th>Producto</th><th>Uds.</th><th>Total</th></tr></thead><tbody id="top-products-body"></tbody></table>
+      </div>
+      <div class="report-card">
+        <h3>🕐 Ventas por hora</h3>
+        <table class="report-table"><thead><tr><th>Hora</th><th>Ventas</th><th>Total</th></tr></thead><tbody id="hourly-body"></tbody></table>
       </div>
     </div>
   </div>
+
+  <!-- Tab: Productos -->
+  <div class="report-tab-content" id="tab-productos">
+    <div class="report-card">
+      <h3>🏆 Todos los productos vendidos</h3>
+      <table class="report-table"><thead><tr><th>Producto</th><th>Unidades</th><th>% del total</th><th>Total $</th></tr></thead><tbody id="all-products-body"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Tab: Transacciones -->
+  <div class="report-tab-content" id="tab-transacciones">
+    <div class="report-card" style="flex:1">
+      <h3>📋 Transacciones del período</h3>
+      <table class="report-table"><thead><tr><th>Fecha/Hora</th><th>N° Venta</th><th>Detalle</th><th>Total</th></tr></thead><tbody id="tx-body"></tbody></table>
+    </div>
+  </div>
+
+  <!-- Tab: Comparar -->
+  <div class="report-tab-content" id="tab-comparar">
+    <div class="report-card" style="padding:14px">
+      <h3 style="margin-bottom:12px">⚖️ Comparar períodos</h3>
+      <div class="compare-row">
+        <span>Período A (actual):</span>
+        <strong id="cmp-period-a" style="font-size:0.82rem;color:var(--secondary)">—</strong>
+      </div>
+      <div class="compare-row" style="margin-top:10px">
+        <span>Período B:</span>
+        <input type="date" id="cmp-from" onchange="loadCompare()">
+        <span>→</span>
+        <input type="date" id="cmp-to" onchange="loadCompare()">
+        <button class="period-btn" onclick="setCmpPrev()" style="font-size:0.75rem">← Período anterior</button>
+      </div>
+      <div id="compare-result" style="margin-top:14px;font-size:0.85rem;color:var(--text-dim)">Selecciona un período B para comparar</div>
+    </div>
+  </div>
+
 </div>
 
 <!-- SETTINGS -->
@@ -279,6 +320,14 @@ function monthRange(offset=0) {
 }
 function diffDays(a, b) {
   return Math.round((new Date(b) - new Date(a)) / 86400000);
+}
+
+// ── REPORT TABS ──────────────────────────────────────────
+function switchTab(name) {
+  document.querySelectorAll('.report-tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.report-tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelector(`.report-tab[onclick="switchTab('${name}')"]`).classList.add('active');
+  document.getElementById('tab-' + name).classList.add('active');
 }
 
 // ── CLOCK & CONNECTION ───────────────────────────────────
@@ -522,7 +571,12 @@ async function loadReports() {
     <div class="kpi"><div class="kpi-label">Unidades vendidas</div><div class="kpi-value">${unitsSold}</div><div class="kpi-sub">productos</div></div>
     <div class="kpi"><div class="kpi-label">Ticket promedio</div><div class="kpi-value">${fmt(avg)}</div><div class="kpi-sub">por venta</div></div>`;
 
-  // Top products
+  // Update compare label
+  const labelA = from === to ? from : `${from} → ${to}`;
+  const elA = document.getElementById('cmp-period-a');
+  if (elA) elA.textContent = labelA;
+
+  // Products map
   const prodMap = {};
   (items||[]).forEach(i => {
     prodMap[i.product_name] = prodMap[i.product_name] || { qty: 0, total: 0 };
@@ -530,9 +584,20 @@ async function loadReports() {
     prodMap[i.product_name].total += i.price * i.qty;
   });
   const sorted = Object.entries(prodMap).sort((a,b) => b[1].qty - a[1].qty);
+  const noData3 = '<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:16px">Sin datos</td></tr>';
+
+  // Tab Resumen: top 5 products
   document.getElementById('top-products-body').innerHTML = sorted.length
-    ? sorted.map(([name, d]) => `<tr><td>${name}</td><td><span class="badge">${d.qty}</span></td><td>${fmt(d.total)}</td></tr>`).join('')
-    : '<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:16px">Sin datos</td></tr>';
+    ? sorted.slice(0,5).map(([name, d]) => `<tr><td>${name}</td><td><span class="badge">${d.qty}</span></td><td>${fmt(d.total)}</td></tr>`).join('')
+    : noData3;
+
+  // Tab Productos: all products with %
+  document.getElementById('all-products-body').innerHTML = sorted.length
+    ? sorted.map(([name, d]) => {
+        const pct = unitsSold > 0 ? Math.round(d.qty / unitsSold * 100) : 0;
+        return `<tr><td>${name}</td><td><span class="badge">${d.qty}</span></td><td>${pct}%</td><td>${fmt(d.total)}</td></tr>`;
+      }).join('')
+    : '<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px">Sin datos</td></tr>';
 
   // Hourly
   const hourMap = {};
@@ -546,20 +611,22 @@ async function loadReports() {
   const hours = Object.entries(hourMap).sort((a,b) => a[0].localeCompare(b[0]));
   document.getElementById('hourly-body').innerHTML = hours.length
     ? hours.map(([h, d]) => `<tr><td>${h}</td><td>${d.count}</td><td>${fmt(d.total)}</td></tr>`).join('')
-    : '<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:16px">Sin datos</td></tr>';
+    : noData3;
 
-  // Transactions
+  // Transactions tab
+  const noDataTx = '<tr><td colspan="4" style="text-align:center;color:var(--text-dim);padding:16px">Sin transacciones en este período</td></tr>';
   document.getElementById('tx-body').innerHTML = (sales||[]).length
-    ? sales.slice(0,30).map(s => {
+    ? sales.map(s => {
         const sItems = (items||[]).filter(i => i.sale_id === s.id);
-        const preview = sItems.map(i => `×${i.qty} ${i.product_name}`).join(', ');
+        const detail = sItems.map(i => `${i.product_name} ×${i.qty}`).join(', ');
         const dt = new Date(s.created_at);
         return `<tr>
-          <td style="font-size:0.75rem;color:var(--text-dim)">${dt.toLocaleDateString('es-CL')} ${dt.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})}</td>
-          <td style="font-size:0.75rem">${preview.slice(0,50)}${preview.length>50?'…':''}</td>
+          <td style="font-size:0.75rem;white-space:nowrap">${dt.toLocaleDateString('es-CL')} ${dt.toLocaleTimeString('es-CL',{hour:'2-digit',minute:'2-digit'})}</td>
+          <td style="font-size:0.75rem;color:var(--text-dim)">${s.sale_number||'—'}</td>
+          <td style="font-size:0.75rem">${detail.slice(0,60)}${detail.length>60?'…':''}</td>
           <td>${fmt(s.total)}</td></tr>`;
       }).join('')
-    : '<tr><td colspan="3" style="text-align:center;color:var(--text-dim);padding:16px">Sin transacciones en este período</td></tr>';
+    : noDataTx;
 }
 
 // ── COMPARE ───────────────────────────────────────────────
